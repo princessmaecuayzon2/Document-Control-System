@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+  
+
+  *{
+    font-family: 'roboto', sans-serif;
+    font-size: 16px;
+  
+  }
+
+
+  @font-face {
+    font-family: 'Helvetica Neue';
+    src: url('/fonts/HelveticaNeue.woff2') format('woff2'),
+         url('/fonts/HelveticaNeue.woff') format('woff'),
+         url('/fonts/VelnicaRegular-9MY45.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+  font-family: 'PoptenDisplay-Thin';
+  src: 
+       url('/fonts/PoptenDisplay-Thin.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+color{
+  color: rgb(0, 204, 255)
+}
