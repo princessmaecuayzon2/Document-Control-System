@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { categoryData } from './CategoryData';
 import {  
   Search, Folder, FileText, Eye, EyeOff, X, ChevronDown, 
-  ChevronRight, FolderOpen, ChevronLeft, ChevronsRight, ChevronsLeft 
+  ChevronRight, FolderOpen, ChevronLeft, ChevronsRight, ChevronsLeft, Image
 } from 'lucide-react';
 
 const DocumentCabinet = () => {
@@ -12,6 +12,8 @@ const DocumentCabinet = () => {
   const [openFolders, setOpenFolders] = useState({});
   const [pdfToView, setPdfToView] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [imageToView, setImageToView] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
   const [documentPages, setDocumentPages] = useState({});
@@ -104,6 +106,46 @@ const DocumentCabinet = () => {
     }
     setPdfToView(null);
     setShowPdfModal(false);
+  };
+
+  const openFileViewer = async (filename) => {
+    try {
+      const token = localStorage.getItem('token');
+      const fileExtension = filename.split('.').pop().toLowerCase();
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/files/${filename}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to open file');
+      }
+
+      const blob = await response.blob();
+      const objectURL = URL.createObjectURL(blob);
+      
+      if (isImage) {
+        setImageToView(objectURL);
+        setShowImageModal(true);
+      } else {
+        setPdfToView(objectURL);
+        setShowPdfModal(true);
+      }
+    } catch (error) {
+      setError('Failed to open document');
+    }
+  };
+
+  const closeImageViewer = () => {
+    if (imageToView) {
+      URL.revokeObjectURL(imageToView);
+    }
+    setImageToView(null);
+    setShowImageModal(false);
   };
 
   const toggleFolder = (category) => {
@@ -229,12 +271,9 @@ const DocumentCabinet = () => {
         )}
 
    
-        <div className="p-4 space-y-2">
-          {filteredCategories.map((category) => (
-            <div 
-              key={category} 
-              className="bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl"
-            >
+<div className="p-4 space-y-2">
+        {filteredCategories.map((category) => (
+          <div key={category} className="bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
           
               <div
                 className="flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer transition"
@@ -257,69 +296,99 @@ const DocumentCabinet = () => {
 
           
               {openFolders[category] && (
-                <div className="bg-white">
-                  {categoryDocuments[category] && categoryDocuments[category].length > 0 ? (
-                    <>
-                      <ul className="divide-y divide-gray-100">
-                        {categoryDocuments[category]
-                          .slice(
-                            (documentPages[category].currentPage - 1) * documentPages[category].documentsPerPage,
-                            documentPages[category].currentPage * documentPages[category].documentsPerPage
-                          )
-                          .map((doc) => (
+              <div className="bg-white">
+                {categoryDocuments[category] && categoryDocuments[category].length > 0 ? (
+                  <>
+                    <ul className="divide-y divide-gray-100">
+                      {categoryDocuments[category]
+                        .slice(
+                          (documentPages[category].currentPage - 1) * documentPages[category].documentsPerPage,
+                          documentPages[category].currentPage * documentPages[category].documentsPerPage
+                        )
+                        .map((doc) => {
+                          const fileExtension = doc.filename.split('.').pop().toLowerCase();
+                          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
+
+                          return (
                             <li
                               key={doc._id}
                               className="p-2 flex justify-between items-center hover:bg-blue-50 transition group"
                             >
                               <div className="flex items-center space-x-4">
-                                <FileText className="w-6 h-6 text-blue-500 group-hover:text-blue-600 transition" />
+                                {isImage ? (
+                                  <Image className="w-6 h-6 text-blue-500 group-hover:text-blue-600 transition" />
+                                ) : (
+                                  <FileText className="w-6 h-6 text-blue-500 group-hover:text-blue-600 transition" />
+                                )}
                                 <span className="text-gray-700 group-hover:text-blue-700 transition">
                                   {doc.documentTitle}
                                 </span>
                               </div>
                               <button
-                                onClick={() => openPdfViewer(doc.filename)}
-                                className="flex items-center text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-full transition"
+                                onClick={() => openFileViewer(doc.filename)}
+                                className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
                               >
-                                <Eye className="w-5 h-5 mr-2" /> View
+                                <Eye className="w-5 h-5" />
                               </button>
                             </li>
-                          ))}
-                      </ul>
-                      
-                      {renderPagination(category, categoryDocuments[category].length)}
-                    </>
-                  ) : (
-                    <div className="p-6 text-center text-gray-500">
-                      No documents in this category
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                          );
+                        })}
+                    </ul>
+                    {renderPagination(category, categoryDocuments[category].length)}
+                  </>
+                ) : (
+                  <div className="p-6 text-center text-gray-500">
+                    No documents in this category
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-       
-        {showPdfModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-3xl shadow-2xl w-11/12 max-w-4xl h-5/6 relative overflow-hidden">
+      {showPdfModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl shadow-2xl w-11/12 max-w-4xl h-5/6 relative overflow-hidden">
+            <button
+              onClick={closePdfViewer}
+              className="absolute top-4 right-4 bg-gray-100 rounded-full p-2 shadow-lg hover:bg-gray-200 transition"
+            >
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+            {pdfToView && (
+              <iframe
+                src={pdfToView}
+                className="w-full h-full border-none rounded-b-3xl"
+                title="PDF Viewer"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+{showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="relative bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-medium">Document Preview</h3>
               <button
-                onClick={closePdfViewer}
-                className="absolute top-4 right-4 bg-gray-100 rounded-full p-3 shadow-lg hover:bg-gray-200 transition"
+                onClick={closeImageViewer}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-5 h-5" />
               </button>
-              {pdfToView && (
-                <iframe
-                  src={pdfToView}
-                  className="w-full h-full border-none rounded-b-3xl"
-                  title="PDF Viewer"
-                />
-              )}
+            </div>
+            <div className="p-4">
+              <img 
+                src={imageToView} 
+                alt="Document Preview" 
+                className="w-full h-auto rounded"
+              />
             </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   );

@@ -19,6 +19,8 @@ const SearchDocument = () => {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [pdfToView, setPdfToView] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [imageToView, setImageToView] = useState(null);
+const [showImageModal, setShowImageModal] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
   const resultsPerPage = 10;
@@ -163,6 +165,42 @@ const SearchDocument = () => {
     setShowPdfModal(false);
   };
 
+  const openImageViewer = async (filename) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+  
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/files/${filename}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to load image');
+      }
+  
+      const blob = await response.blob();
+      const objectURL = URL.createObjectURL(blob);
+      setImageToView(objectURL);
+      setShowImageModal(true);
+    } catch (error) {
+      console.error('Error loading image:', error);
+    }
+  };
+  
+  const closeImageViewer = () => {
+    if (imageToView) {
+      URL.revokeObjectURL(imageToView);
+    }
+    setImageToView(null);
+    setShowImageModal(false);
+  };
+
   if (isLoading) {
     return (
       <div className="bg-opacity-90 p-6 max-w-4xl mx-auto bg-white">
@@ -257,8 +295,8 @@ const SearchDocument = () => {
                 </div>
 
             
-                {[{ label: 'Start Date', value: startDate, onChange: setStartDate },
-                  { label: 'End Date', value: endDate, onChange: setEndDate }].map(({ label, value, onChange }, index) => (
+                {[{ label: 'From', value: startDate, onChange: setStartDate },
+                  { label: 'To', value: endDate, onChange: setEndDate }].map(({ label, value, onChange }, index) => (
                   <div key={index}>
                     <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                       <Calendar className="mr-2 text-red-500" size={20} />
@@ -287,52 +325,74 @@ const SearchDocument = () => {
           </div>
         )}
 
-         <div className="p-6">
-          {results.length > 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-100 border-b-2 border-gray-200">
-                  <tr>
-                    {['Document Title', 'Category', 'Upload Date', 'Prepared By', 'Actions'].map((header) => (
-                      <th key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((doc) => (
-                    <tr key={doc._id} className="hover:bg-gray-50 transition duration-150 border-b">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doc.documentTitle}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{doc.category}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date(doc.uploadDate).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{doc.preparedBy}</td>
-                      <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                        <button
-                          onClick={() => openPdfViewer(doc.filename)}
-                          className="text-blue-600 hover:bg-blue-100 p-2 rounded-full transition">
-                          <Eye size={20} />
-                        </button>
-                        {userPermissions?.edit && (
-                          <button
-                            onClick={() => setSelectedDocument(doc)}
-                            className="text-green-600 hover:bg-green-100 p-2 rounded-full transition">
-                            <Edit2 size={20} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
+<div className="p-6">
+        {results.length > 0 ? (
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-100 border-b-2 border-gray-200">
+                <tr>
+                  {['Document Title', 'Category', 'Upload Date', 'Prepared By', 'Actions'].map((header) => (
+                    <th key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      {header}
+                    </th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl">
-              <p className="text-gray-500 text-lg">No results found.</p>
-            </div>
-          )}
-        </div>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((file) => (
+                  <tr key={file._id} className="border-b">
+                    <td className="px-6 py-4">{file.documentTitle}</td>
+                    <td className="px-6 py-4">{file.category}</td>
+                    <td className="px-6 py-4">{new Date(file.uploadDate).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">{file.preparedBy}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const fileExtension = file.filename.split('.').pop().toLowerCase();
+                          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
+                          const isPdf = fileExtension === 'pdf';
 
+                          return (
+                            <>
+                              {/* View Button */}
+                              <button
+                                onClick={() => isImage ? openImageViewer(file.filename) : openPdfViewer(file.filename)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  isImage ? 'bg-blue-100 hover:bg-blue-200 text-blue-600' :
+                                  isPdf ? 'bg-green-100 hover:bg-green-200 text-green-600' :
+                                  'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                }`}
+                                title={isImage ? 'View Image' : isPdf ? 'View PDF' : 'View Document'}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+
+                              {/* Edit Button */}
+                              {userPermissions?.edit && (
+                                <button
+                                  onClick={() => setSelectedDocument(file)}
+                                  className="p-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-600 rounded-lg transition-colors"
+                                  title="Edit Document"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-2xl">
+            <p className="text-gray-500 text-lg">No results found.</p>
+          </div>
+        )}
+      </div>
  
         {results.length > 0 && (
           <div className="flex justify-center py-6">
@@ -379,6 +439,29 @@ const SearchDocument = () => {
             </div>
           </div>
         )}
+
+{showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="relative bg-white rounded-lg shadow-lg max-w-lg w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-medium">Document Preview</h3>
+              <button
+                onClick={closeImageViewer}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <img 
+                src={imageToView} 
+                alt="Document Preview" 
+                className="w-full h-auto rounded"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
         {selectedDocument && (
           <EditDocument

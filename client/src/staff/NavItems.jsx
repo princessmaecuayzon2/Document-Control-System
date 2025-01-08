@@ -27,7 +27,7 @@ const NAV_ITEMS = [
     label: 'Alerts',
     key: 'alerts',
     icon: AlertTriangle,
-    badge: '3'
+
   }
 ];
 
