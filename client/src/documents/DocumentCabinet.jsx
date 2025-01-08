@@ -369,7 +369,7 @@ const DocumentCabinet = () => {
 
 {showImageModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="relative bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4">
+          <div className="relative bg-white rounded-lg shadow-lg max-w-lg w-full mx-4">
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="text-lg font-medium">Document Preview</h3>
               <button
