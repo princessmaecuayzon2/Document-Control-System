@@ -92,7 +92,7 @@ const Staff = ({ Logout }) => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 120 }}
-        className="bg-gradient-to-r from-blue-700 to-cyan-600 text-white"
+        className="bg-gradient-to-r from-purple-700 to-purple-600 text-white"
       >
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
