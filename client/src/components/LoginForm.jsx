@@ -90,11 +90,7 @@ const LoginForm = ({ setAuthToken, setUserRole }) => {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <a href="/forgot-password" className="hover:text-blue-500 transition-colors">
-              Forgot your password?
-            </a>
-          </div>
+         
         </div>
       </div>
     </div>
