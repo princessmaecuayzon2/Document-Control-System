@@ -48,7 +48,7 @@ const NavItems = ({ currentView = 'dashboard', onViewChange = () => {} }) => {
               relative flex items-center px-4 py-2 rounded-lg
               transition-all duration-200 ease-in-out
               ${isActive 
-                ? 'bg-gradient-to-r from-purple-700 to-purple-600' 
+                ? 'bg-white shadow-lg' 
                 : 'text-black  hover:bg-purple-500/30'
               }
             `}
